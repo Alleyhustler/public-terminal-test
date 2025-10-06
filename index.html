@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUBLIC TERMINAL TEST</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #e8e6e0;
+            color: #2a2a2a;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 2px;
+            height: 20px;
+            background: rgba(138, 255, 0, 0.8);
+            pointer-events: none;
+            z-index: 10000;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(138, 255, 0, 0.3), transparent);
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="3.5" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.03"/%3E%3C/svg%3E');
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0.4;
+        }
+
+        .container {
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            background: rgba(232, 230, 224, 0.95);
+            border-bottom: 1px solid rgba(42, 42, 42, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .wallet-connect-bar {
+            position: fixed;
+            top: 60px;
+            right: 30px;
+            z-index: 1001;
+        }
+
+        .wallet-btn {
+            background: transparent;
+            border: 1px solid rgba(42, 42, 42, 0.3);
+            padding: 12px 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            cursor: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            background: rgba(232, 230, 224, 0.6);
+        }
+
+        .wallet-btn:hover {
+            border-color: rgba(138, 255, 0, 0.6);
+            background: rgba(138, 255, 0, 0.05);
+        }
+
+        .wallet-btn.connected {
+            border-color: rgba(138, 255, 0, 0.6);
+            color: rgba(138, 255, 0, 0.9);
+        }
+
+        .wallet-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(232, 230, 224, 0.98);
+            border: 1px solid rgba(42, 42, 42, 0.2);
+            padding: 50px;
+            z-index: 10001;
+            min-width: 400px;
+            backdrop-filter: blur(20px);
+        }
+
+        .wallet-modal.active {
+            display: block;
+            animation: modalFadeIn 0.4s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translate(-50%, -48%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .modal-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            opacity: 0.6;
+        }
+
+        .wallet-option {
+            padding: 18px 24px;
+            margin: 10px 0;
+            border: 1px solid rgba(42, 42, 42, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            cursor: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .wallet-option:hover {
+            border-color: rgba(138, 255, 0, 0.6);
+            background: rgba(138, 255, 0, 0.05);
+            transform: translateX(5px);
+        }
+
+        .wallet-icon {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            cursor: none;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+
+        .close-modal:hover {
+            opacity: 1;
+        }
+
+        .status-item {
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+        }
+
+        .status-item:nth-child(2) { animation-delay: 0.5s; }
+        .status-item:nth-child(3) { animation-delay: 1s; }
+
+        @keyframes fadeIn {
+            to { opacity: 0.6; }
+        }
+
+        .glitch-text {
+            position: relative;
+        }
+
+        .landing {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .main-title {
+            font-size: clamp(3rem, 12vw, 9rem);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            text-align: center;
+            line-height: 0.9;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: titleReveal 2s 0.5s forwards;
+        }
+
+        @keyframes titleReveal {
+            to { opacity: 1; }
+        }
+
+        .subtitle {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 4px;
+            opacity: 0.5;
+            margin-bottom: 80px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        .initiate-btn {
+            padding: 20px 60px;
+            background: transparent;
+            border: 2px solid rgba(42, 42, 42, 0.3);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 3px;
+            cursor: none;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeIn 2s 2s forwards;
+        }
+
+        .initiate-btn:hover {
+            border-color: rgba(138, 255, 0, 0.6);
+            background: rgba(138, 255, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .initiate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(138, 255, 0, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .initiate-btn:hover::before {
+            left: 100%;
+        }
+
+        .info-links {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+            opacity: 0;
+            animation: fadeIn 2s 2.5s forwards;
+        }
+
+        .info-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid rgba(42, 42, 42, 0.2);
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(42, 42, 42, 0.6);
+            text-decoration: none;
+            cursor: none;
+            transition: all 0.3s ease;
+        }
+
+        .info-link:hover {
+            border-color: rgba(138, 255, 0, 0.6);
+            background: rgba(138, 255, 0, 0.05);
+            color: rgba(42, 42, 42, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .info-link svg {
+            opacity: 0.5;
+        }
+
+        .terminal-section {
+            display: none;
+            min-height: 100vh;
+            padding: 120px 40px 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .terminal-section.active {
+            display: block;
+            animation: sectionFadeIn 1.5s;
+        }
+
+        @keyframes sectionFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .terminal-header {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            margin-bottom: 40px;
+        }
+
+        .terminal-box {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(42, 42, 42, 0.1);
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(20px);
+        }
+
+        .terminal-output {
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            line-height: 2;
+            letter-spacing: 1px;
+        }
+
+        .terminal-line {
+            opacity: 0;
+            animation: lineReveal 0.5s forwards;
+            margin: 10px 0;
+        }
+
+        .terminal-line:nth-child(1) { animation-delay: 0.2s; }
+        .terminal-line:nth-child(2) { animation-delay: 0.5s; }
+        .terminal-line:nth-child(3) { animation-delay: 0.8s; }
+        .terminal-line:nth-child(4) { animation-delay: 1.1s; }
+        .terminal-line:nth-child(5) { animation-delay: 1.4s; }
+
+        @keyframes lineReveal {
+            to { opacity: 0.7; }
+        }
+
+        .hash {
+            color: rgba(138, 255, 0, 0.8);
+            font-size: 11px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: rgba(138, 255, 0, 0.8);
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .observation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .data-cell {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(42, 42, 42, 0.1);
+            padding: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+        }
+
+        .data-label {
+            opacity: 0.4;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .data-value {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-top: 5px;
+        }
+
+        .camera-overlay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            opacity: 0.3;
+            z-index: 999;
+        }
+
+        .timestamp {
+            margin-top: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+            background: rgba(232, 230, 224, 0.95);
+            border-top: 1px solid rgba(42, 42, 42, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .solana-glyph {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.15;
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            .status-bar, .footer {
+                font-size: 8px;
+                padding: 10px 15px;
+            }
+            .terminal-box {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-cursor"></div>
+    <div class="scan-line"></div>
+    <div class="grain"></div>
+
+    <div class="status-bar">
+        <div class="status-item">TERMINAL ACTIVE</div>
+        <div class="status-item">TEST SESSION #00247</div>
+        <div class="status-item" id="connection-status">IDLE CONNECTION</div>
+    </div>
+
+    <div class="wallet-connect-bar">
+        <button class="wallet-btn" id="wallet-btn">
+            <span id="wallet-text">CONNECT WALLET PUMPFUN</span>
+        </button>
+    </div>
+
+    <div class="camera-overlay">
+        <div>◉ CAM-03 RECORDING</div>
+        <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay" onclick="closeWalletModal()"></div>
+    
+    <div class="wallet-modal" id="wallet-modal">
+        <button class="close-modal" onclick="closeWalletModal()">×</button>
+        <div class="modal-title">SELECT WALLET PROVIDER</div>
+        <button class="wallet-option" onclick="connectWallet('phantom')">
+            <span>PHANTOM</span>
+            <svg class="wallet-icon" viewBox="0 0 128 128" fill="none">
+                <circle cx="64" cy="64" r="64" fill="#AB9FF2"/>
+            </svg>
+        </button>
+        <button class="wallet-option" onclick="connectWallet('solflare')">
+            <span>SOLFLARE</span>
+            <svg class="wallet-icon" viewBox="0 0 128 128" fill="none">
+                <circle cx="64" cy="64" r="64" fill="#FC8D4D"/>
+            </svg>
+        </button>
+        <button class="wallet-option" onclick="connectWallet('backpack')">
+            <span>BACKPACK</span>
+            <svg class="wallet-icon" viewBox="0 0 128 128" fill="none">
+                <circle cx="64" cy="64" r="64" fill="#E33E3F"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="container">
+        <section class="landing" id="landing">
+            <div class="main-title">
+                PUBLIC<br>TERMINAL<br>TEST
+            </div>
+            <div class="subtitle">SOLANA BEHAVIORAL OBSERVATION PROTOCOL</div>
+            <button class="initiate-btn" onclick="initiateTest()">
+                [ PRESS TO INITIATE TEST ]
+            </button>
+            
+            <div class="info-links">
+                <a href="https://twitter.com" target="_blank" class="info-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    SUBJECT FEED
+                </a>
+                <a href="#" class="info-link" onclick="copyCA(event)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    CONTRACT ADDRESS
+                </a>
+            </div>
+        </section>
+
+        <section class="terminal-section" id="terminal">
+            <div class="terminal-header">
+                → SUBJECT CONNECTION ESTABLISHED
+            </div>
+
+            <div class="terminal-box">
+                <div class="terminal-output">
+                    <div class="terminal-line">
+                        <span class="status-indicator"></span>STATUS: RUNNING TEST #7
+                    </div>
+                    <div class="terminal-line">
+                        &gt; SUBJECT CONNECTED: WALLET DETECTED
+                    </div>
+                    <div class="terminal-line">
+                        &gt; NETWORK: SOLANA MAINNET
+                    </div>
+                    <div class="terminal-line">
+                        &gt; CONTRACT HASH: <span class="hash">0x7a9f3bc4e...d82f1a</span>
+                    </div>
+                    <div class="terminal-line">
+                        &gt; REALITY SYNC: <span class="data-value" style="font-size: 13px; color: rgba(138, 255, 0, 0.8);">73%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="observation-grid">
+                <div class="data-cell">
+                    <div class="data-label">CONNECTION LATENCY</div>
+                    <div class="data-value">24ms</div>
+                </div>
+                <div class="data-cell">
+                    <div class="data-label">OBSERVATION DURATION</div>
+                    <div class="data-value" id="duration">00:00</div>
+                </div>
+                <div class="data-cell">
+                    <div class="data-label">TEST RESULT</div>
+                    <div class="data-value" style="font-size: 18px; letter-spacing: 3px;">PENDING</div>
+                </div>
+            </div>
+
+            <div class="terminal-box" style="margin-top: 60px; background: rgba(0, 0, 0, 0.02);">
+                <div class="terminal-output">
+                    <div class="terminal-line">
+                        &gt; BEHAVIORAL METRICS COLLECTION: ACTIVE
+                    </div>
+                    <div class="terminal-line">
+                        &gt; NEURAL PATTERN ANALYSIS: RUNNING
+                    </div>
+                    <div class="terminal-line">
+                        &gt; CONSENSUS VERIFICATION: STANDBY
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="footer">
+        <div>COORDINATES: 40.7128°N 74.0060°W</div>
+        <div>PROPERTY OF TERMINAL LABS</div>
+        <div>OBSERVATION IN PROGRESS</div>
+    </div>
+
+    <svg class="solana-glyph" viewBox="0 0 397.7 311.7" fill="rgba(138, 255, 0, 0.3)">
+        <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z"/>
+        <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z"/>
+        <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z"/>
+    </svg>
+
+    <script>
+        const cursor = document.querySelector('.custom-cursor');
+        let connectedWallet = null;
+        const CONTRACT_ADDRESS = 'YourSolanaContractAddressHere123456789';
+        
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        function updateTimestamp() {
+            const now = new Date();
+            const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+            document.getElementById('timestamp').textContent = timestamp;
+        }
+
+        updateTimestamp();
+        setInterval(updateTimestamp, 1000);
+
+        let seconds = 0;
+        function updateDuration() {
+            seconds++;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const durationEl = document.getElementById('duration');
+            if (durationEl) {
+                durationEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+        }
+
+        function initiateTest() {
+            document.getElementById('landing').style.display = 'none';
+            document.getElementById('terminal').classList.add('active');
+            setInterval(updateDuration, 1000);
+        }
+
+        document.getElementById('wallet-btn').addEventListener('click', function() {
+            if (connectedWallet) {
+                disconnectWallet();
+            } else {
+                openWalletModal();
+            }
+        });
+
+        function openWalletModal() {
+            document.getElementById('modal-overlay').classList.add('active');
+            document.getElementById('wallet-modal').classList.add('active');
+        }
+
+        function closeWalletModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+            document.getElementById('wallet-modal').classList.remove('active');
+        }
+
+        async function connectWallet(walletType) {
+            closeWalletModal();
+            
+            try {
+                let provider;
+                let publicKey;
+                
+                if (walletType === 'phantom') {
+                    if (window.solana && window.solana.isPhantom) {
+                        provider = window.solana;
+                    } else {
+                        window.open('https://phantom.app/', '_blank');
+                        alert('Phantom wallet not detected. Opening installation page...');
+                        return;
+                    }
+                } else if (walletType === 'solflare') {
+                    if (window.solflare) {
+                        provider = window.solflare;
+                    } else {
+                        window.open('https://solflare.com/', '_blank');
+                        alert('Solflare wallet not detected. Opening installation page...');
+                        return;
+                    }
+                } else if (walletType === 'backpack') {
+                    if (window.backpack) {
+                        provider = window.backpack;
+                    } else {
+                        window.open('https://backpack.app/', '_blank');
+                        alert('Backpack wallet not detected. Opening installation page...');
+                        return;
+                    }
+                }
+
+                // Connect to wallet
+                const resp = await provider.connect();
+                publicKey = resp.publicKey.toString();
+
+                connectedWallet = {
+                    type: walletType,
+                    address: publicKey
+                };
+
+                const shortAddress = publicKey.slice(0, 4) + '...' + publicKey.slice(-4);
+                document.getElementById('wallet-text').textContent = shortAddress;
+                document.getElementById('wallet-btn').classList.add('connected');
+                document.getElementById('connection-status').textContent = 'SUBJECT CONNECTED';
+                
+            } catch (err) {
+                console.error('Connection failed:', err);
+                alert('Connection failed: ' + err.message);
+            }
+        }
+
+        function disconnectWallet() {
+            connectedWallet = null;
+            document.getElementById('wallet-text').textContent = 'CONNECT SUBJECT';
+            document.getElementById('wallet-btn').classList.remove('connected');
+            document.getElementById('connection-status').textContent = 'IDLE CONNECTION';
+        }
+
+        function copyCA(event) {
+            event.preventDefault();
+            navigator.clipboard.writeText(CONTRACT_ADDRESS).then(() => {
+                const link = event.currentTarget;
+                const originalText = link.innerHTML;
+                link.innerHTML = link.innerHTML.replace('CONTRACT ADDRESS', 'COPIED');
+                setTimeout(() => {
+                    link.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusItems = document.querySelectorAll('.status-item');
+            setInterval(() => {
+                const randomItem = statusItems[Math.floor(Math.random() * statusItems.length)];
+                randomItem.style.opacity = Math.random() > 0.5 ? '0.6' : '0.3';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
